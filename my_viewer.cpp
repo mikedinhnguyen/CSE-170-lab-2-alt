@@ -49,7 +49,6 @@ void MyViewer::add_model ( SnShape* s, GsVec p )
 	SnLines* l = new SnLines;
 	SnTransform* t = new SnTransform;
 	//m = (GsMat((float)cos(90), (float)-sin(90), 0, 0, (float)sin(90), (float)cos(90), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1));
-	
 
 	l->color(GsColor::orange);
 	g->add(s);
@@ -67,10 +66,10 @@ void MyViewer::add_model ( SnShape* s, GsVec p )
 void MyViewer::build_scene ()
 {
 	SnPrimitive* p;
-	SnGroup* g = new SnGroup;
-	//SnTransform* tr = (SnTransform*)((SnGroup*)((SnManipulator*)rootg()->get(0))->child(g))->get(1);
+	//SnGroup* g = new SnGroup;
+	//SnTransform* tr = (SnTransform*)((SnGroup*)((SnManipulator*)rootg()->get(0))->child())->get(1);
 
-	p = new SnPrimitive(GsPrimitive::Cylinder, 5, 5, 0.25f); // watch face
+	min = new SnPrimitive(GsPrimitive::Cylinder, 5, 5, 0.25f); // watch face
 	p->prim().material.diffuse = GsColor::darkred;
 	p->prim().orientation = GsQuat(GsVec::i, (float)GS_PIDIV2); 
 	// rotate 90 degrees
@@ -105,6 +104,12 @@ void MyViewer::build_scene ()
 	add_model(p, GsVec(0, 2.5f, 0.5f));
 }
 
+func()
+{
+	gsmat m;
+	m = ;
+	min.init_mat(m);
+}
 // Below is an example of how to control the main loop of an animation:
 void MyViewer::run_animation ()
 {
@@ -121,10 +126,16 @@ void MyViewer::run_animation ()
 	double t=0, lt=0, t0=gs_time();
 	do // run for a while:
 	{	while ( t-lt<frdt ) { ws_check(); t=gs_time()-t0; } // wait until it is time for next frame
+		double xinc = (t - lt) * v;
 		double yinc = (t - lt) * v;
-		if ( t>1 ) yinc=-yinc; // after 1 sec: go down
+		if (t > 1) { 
+			xinc = -xinc;
+			yinc = -yinc;
+		} // after 1 sec: go down
 		lt = t;
+		m.e14 += (float)xinc;
 		m.e24 += (float)yinc;
+		
 		if ( m.e24<0 ) m.e24=0; // make sure it does not go below 0
 		manip->initial_mat ( m );
 		render(); // notify it needs redraw
