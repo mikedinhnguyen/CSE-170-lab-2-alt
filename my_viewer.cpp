@@ -63,6 +63,14 @@ void MyViewer::add_model ( SnShape* s, GsVec p )
 	rootg()->add(manip);
 }
 
+void MyViewer::rotate_shape()
+{
+	SnManipulator* manip = new SnManipulator;
+	GsMat m;
+	m = (GsMat((float)cos(90), (float)-sin(90), 0, 0, (float)sin(90), (float)cos(90), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1));
+	manip->initial_mat(m);
+}
+
 void MyViewer::build_scene ()
 {
 	SnPrimitive* p;
@@ -70,11 +78,11 @@ void MyViewer::build_scene ()
 	//SnTransform* tr = (SnTransform*)((SnGroup*)((SnManipulator*)rootg()->get(0))->child())->get(1);
 
 	min = new SnPrimitive(GsPrimitive::Cylinder, 5, 5, 0.25f); // watch face
-	p->prim().material.diffuse = GsColor::darkred;
-	p->prim().orientation = GsQuat(GsVec::i, (float)GS_PIDIV2); 
+	min->prim().material.diffuse = GsColor::darkred;
+	min->prim().orientation = GsQuat(GsVec::i, (float)GS_PIDIV2); 
 	// rotate 90 degrees
 
-	add_model(p, GsVec(0, 0, 0));
+	add_model(min, GsVec(0, 0, 0));
 
 	p = new SnPrimitive(GsPrimitive::Cylinder, 0.25, 0.25, 2.5f); // hand 1
 	//g->separator(true);
@@ -104,12 +112,6 @@ void MyViewer::build_scene ()
 	add_model(p, GsVec(0, 2.5f, 0.5f));
 }
 
-func()
-{
-	gsmat m;
-	m = ;
-	min.init_mat(m);
-}
 // Below is an example of how to control the main loop of an animation:
 void MyViewer::run_animation ()
 {
