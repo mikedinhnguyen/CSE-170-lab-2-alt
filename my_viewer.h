@@ -18,7 +18,6 @@ class MyViewer : public WsViewer
 	MyViewer ( int x, int y, int w, int h, const char* l );
 	void build_ui ();
 	void add_model ( SnShape* s, GsVec p );
-	void rotate_shape();
 	void build_scene ();
 	void show_normals ( bool view );
 	void run_animation ();
