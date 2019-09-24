@@ -68,6 +68,7 @@ void MyViewer::rotate_shape()
 	SnManipulator* manip = new SnManipulator;
 	GsMat m;
 	m = (GsMat((float)cos(90), (float)-sin(90), 0, 0, (float)sin(90), (float)cos(90), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1));
+	//m.translation(p);
 	manip->initial_mat(m);
 }
 
@@ -77,24 +78,22 @@ void MyViewer::build_scene ()
 	//SnGroup* g = new SnGroup;
 	//SnTransform* tr = (SnTransform*)((SnGroup*)((SnManipulator*)rootg()->get(0))->child())->get(1);
 
-	min = new SnPrimitive(GsPrimitive::Cylinder, 5, 5, 0.25f); // watch face
-	min->prim().material.diffuse = GsColor::darkred;
-	min->prim().orientation = GsQuat(GsVec::i, (float)GS_PIDIV2); 
+	p = new SnPrimitive(GsPrimitive::Cylinder, 5, 5, 0.25f); // watch face
+	p->prim().material.diffuse = GsColor::darkred;
+	p->prim().orientation = GsQuat(GsVec::i, (float)GS_PIDIV2); 
 	// rotate 90 degrees
 
-	add_model(min, GsVec(0, 0, 0));
+	add_model(p, GsVec(0, 0, 0));
 
-	p = new SnPrimitive(GsPrimitive::Cylinder, 0.25, 0.25, 2.5f); // hand 1
+	min = new SnPrimitive(GsPrimitive::Cylinder, 0.25, 0.25, 2.5f); // hand 1
 	//g->separator(true);
 	//g->add(tr = new SnTransform);
 	//g->add(new SnModel(*p));
 	//tr->get().translation(0.5f, 0, 0);
 	//rootg()->add(g);
-	p->prim().material.diffuse = GsColor::red;
-	// p->prim().orientation = GsQuat(GsVec::i, (float)GS_PIDIV2); 
-	// rotate 90 degrees
+	min->prim().material.diffuse = GsColor::red;
 
-	add_model(p, GsVec(0, 2.5f, 0.5f));
+	add_model(min, GsVec(0, 2.5f, 0.5f));
 
 	p = new SnPrimitive(GsPrimitive::Cylinder, 0.5, 0, 0.5); // hand 1's arrow
 	p->prim().material.diffuse = GsColor::red;
@@ -118,28 +117,35 @@ void MyViewer::run_animation ()
 	if ( _animating ) return; // avoid recursive calls
 	_animating = true;
 	
-	//int ind = gs_random ( 0, rootg()->size()-1 ); // pick one child
 	int ind = 1;
 	SnManipulator* manip = rootg()->get<SnManipulator>(ind); // access one of the manipulators
 	GsMat m = manip->mat();
 
 	double frdt = 1.0/30.0; // delta time to reach given number of frames per second
-	double v = 1; // target velocity is 1 unit per second
+	//double v = 1; // target velocity is 1 unit per second
 	double t=0, lt=0, t0=gs_time();
+	double increment = GS_2PI/60;
+	double tsd=0, tmd=0;
 	do // run for a while:
 	{	while ( t-lt<frdt ) { ws_check(); t=gs_time()-t0; } // wait until it is time for next frame
-		double xinc = (t - lt) * v;
-		double yinc = (t - lt) * v;
-		if (t > 1) { 
-			xinc = -xinc;
-			yinc = -yinc;
-		} // after 1 sec: go down
+	
+		tsd += increment;
+		if (tsd - GS_2PI >= 0) {
+			tsd = 0;
+			tmd += increment;
+			if (tmd - GS_2PI >= 0) {
+				tmd = 0;
+			}
+		}
 		lt = t;
-		m.e14 += (float)xinc;
-		m.e24 += (float)yinc;
+		GsMat transMat, rotMat;
+		transMat.translation(GsVec(0, 2.5f, 0.5f));
+		rotMat.rotz((float)sin(6), (float)cos(6));
+		m = transMat * rotMat;
+		manip->initial_mat(m);
 		
-		if ( m.e24<0 ) m.e24=0; // make sure it does not go below 0
-		manip->initial_mat ( m );
+		//if ( m.e24<0 ) m.e24=0; // make sure it does not go below 0
+		//manip->initial_mat ( m );
 		render(); // notify it needs redraw
 		ws_check(); // redraw now
 	}	while ( m.e24>0 );
