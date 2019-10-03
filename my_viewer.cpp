@@ -63,15 +63,6 @@ void MyViewer::add_model ( SnShape* s, GsVec p )
 	rootg()->add(manip);
 }
 
-void MyViewer::rotate_shape()
-{
-	SnManipulator* manip = new SnManipulator;
-	GsMat m;
-	m = (GsMat((float)cos(90), (float)-sin(90), 0, 0, (float)sin(90), (float)cos(90), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1));
-	//m.translation(p);
-	manip->initial_mat(m);
-}
-
 void MyViewer::build_scene ()
 {
 	SnPrimitive* p;
@@ -79,7 +70,7 @@ void MyViewer::build_scene ()
 	//SnTransform* tr = (SnTransform*)((SnGroup*)((SnManipulator*)rootg()->get(0))->child())->get(1);
 
 	p = new SnPrimitive(GsPrimitive::Cylinder, 5, 5, 0.25f); // watch face
-	p->prim().material.diffuse = GsColor::darkred;
+	p->prim().material.diffuse = GsColor::darkblue;
 	p->prim().orientation = GsQuat(GsVec::i, (float)GS_PIDIV2); 
 	// rotate 90 degrees
 
@@ -95,61 +86,72 @@ void MyViewer::build_scene ()
 
 	add_model(min, GsVec(0, 2.5f, 0.5f));
 
-	p = new SnPrimitive(GsPrimitive::Cylinder, 0.5, 0, 0.5); // hand 1's arrow
-	p->prim().material.diffuse = GsColor::red;
+	//p = new SnPrimitive(GsPrimitive::Cylinder, 0.5, 0, 0.5); // hand 1's arrow
+	//p->prim().material.diffuse = GsColor::red;
 
-	add_model(p, GsVec(0, 5.5f, 0.5f));
+	//add_model(p, GsVec(0, 5.5f, 0.5f));
 
 	p = new SnPrimitive(GsPrimitive::Cylinder, 0.25, 0.25, 1); // hand 2
 	p->prim().material.diffuse = GsColor::orange;
 
-	add_model(p, GsVec(0, 1, 0.5f));
+	add_model(p, GsVec(0, 1, 1));
 
-	p = new SnPrimitive(GsPrimitive::Cylinder, 0.5, 0, 0.5); // hand 2's arrow
-	p->prim().material.diffuse = GsColor::orange;
+	//p = new SnPrimitive(GsPrimitive::Cylinder, 0.5, 0, 0.5); // hand 2's arrow
+	//p->prim().material.diffuse = GsColor::orange;
 
-	add_model(p, GsVec(0, 2.5f, 0.5f));
+	//add_model(p, GsVec(0, 2.5f, 0.5f));
 }
 
 // Below is an example of how to control the main loop of an animation:
 void MyViewer::run_animation ()
 {
-	if ( _animating ) return; // avoid recursive calls
+	//if ( _animating ) return; // avoid recursive calls
 	_animating = true;
 	
-	int ind = 1;
-	SnManipulator* manip = rootg()->get<SnManipulator>(ind); // access one of the manipulators
+	SnManipulator* manip = rootg()->get<SnManipulator>(1); // access hand 1
 	GsMat m = manip->mat();
+	SnManipulator* manip2 = rootg()->get<SnManipulator>(3); // access hand 2
+	GsMat m2 = manip->mat();
 
-	double frdt = 1.0/30.0; // delta time to reach given number of frames per second
+	double frdt = 1.0/60; // delta time to reach given number of frames per second
 	//double v = 1; // target velocity is 1 unit per second
 	double t=0, lt=0, t0=gs_time();
 	double increment = GS_2PI/60;
-	double tsd=0, tmd=0;
-	do // run for a while:
+	double second=0, minute=0, theta=0;
+
+	while (_animating == true)
 	{	while ( t-lt<frdt ) { ws_check(); t=gs_time()-t0; } // wait until it is time for next frame
-	
-		tsd += increment;
-		if (tsd - GS_2PI >= 0) {
-			tsd = 0;
-			tmd += increment;
-			if (tmd - GS_2PI >= 0) {
-				tmd = 0;
+
+		second += increment;
+		if (second - GS_2PI >= 0) {
+			second = 0;
+			minute += increment;
+			if (minute - GS_2PI >= 0) {
+				minute = 0;
 			}
 		}
-		lt = t;
-		GsMat transMat, rotMat;
-		transMat.translation(GsVec(0, 2.5f, 0.5f));
-		rotMat.rotz((float)sin(6), (float)cos(6));
-		m = transMat * rotMat;
-		manip->initial_mat(m);
 		
+		GsMat transMat, transMat2, rotMat;
+		transMat.translation(GsVec(0, 0, 0.5f));
+		rotMat.rotz((float)-sin(second), (float)cos(second));
+		transMat2.translation(GsVec(0, 2.5f, 0));
+		m = transMat * rotMat * transMat2;
+		manip->initial_mat(m);
+
+		GsMat minMat, minMat2, rotMinute;
+		minMat.translation(GsVec(0, -1.5f, 0.5f));
+		rotMinute.rotz((float)-sin(minute), (float)cos(minute));
+		minMat2.translation(GsVec(0, 2.5f, 0.5f));
+		m2 = minMat * rotMinute * minMat2;
+		manip2->initial_mat(m2);
+
 		//if ( m.e24<0 ) m.e24=0; // make sure it does not go below 0
 		//manip->initial_mat ( m );
+		lt = t;
 		render(); // notify it needs redraw
 		ws_check(); // redraw now
-	}	while ( m.e24>0 );
-	_animating = false;
+		
+	}
 }
 
 void MyViewer::show_normals ( bool view )
@@ -186,8 +188,26 @@ int MyViewer::handle_keyboard ( const GsEvent &e )
 	if ( ret ) return ret;
 
 	switch ( e.key )
-	{	case GsEvent::KeyEsc : gs_exit(); return 1;
-		case 'n' : { bool b=!_nbut->value(); _nbut->value(b); show_normals(b); return 1; }
+	{
+	case GsEvent::KeyEsc: {gs_exit(); return 1; }
+	case GsEvent::KeyEnter: { 
+		SnManipulator* manip = rootg()->get<SnManipulator>(1); // access hand 1
+		GsMat m = manip->mat(); 
+		GsVec p;
+		m.translation(p);
+		manip->initial_mat(m);
+		return 1; }
+		
+	case GsEvent::KeySpace: {
+				if (_animating == true) {
+					_animating = false;
+				}
+				if (_animating == false) {
+					_animating = true;
+				}
+			return 1;
+		}
+		case 'n': { bool b = !_nbut->value(); _nbut->value(b); show_normals(b); return 1; }
 		default: gsout<<"Key pressed: "<<e.key<<gsnl;
 	}
 
